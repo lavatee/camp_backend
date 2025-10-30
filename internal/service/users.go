@@ -44,6 +44,7 @@ func (s *UsersService) hashPassword(password string) string {
 
 func (s *UsersService) SignUp(user model.User) (int, error) {
 	user.PasswordHash = s.hashPassword(user.PasswordHash)
+	user.PhotoURL = s.getMediaURL(fmt.Sprint(user.Id))
 	return s.repo.Users.CreateUser(user)
 }
 

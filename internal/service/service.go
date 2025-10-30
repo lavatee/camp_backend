@@ -10,7 +10,7 @@ import (
 
 type Users interface {
 	SignUp(user model.User) (int, error)
-	SignIn(email string, passwordHash string) (string, string, error)
+	SignIn(email string, password string) (string, string, error)
 	EditUserInfo(user model.User) error
 	CheckTagUnique(tag string) bool
 	FindUserByTag(tag string) (model.User, error)

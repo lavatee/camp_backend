@@ -33,7 +33,27 @@ func (e *Endpoint) InitRoutes() *gin.Engine {
 		auth.POST("/sign-up", e.SignUp)
 		auth.POST("/sign-in", e.SignIn)
 		auth.POST("/refresh", e.Refresh)
+		auth.GET("/tag-unique/:tag", e.CheckTagUnique)
 	}
 	api := router.Group("/api", e.Middleware)
+	{
+		api.GET("/users/:id", e.GetOneUser)
+		api.PUT("/users/:id", e.EditUserData)
+		api.GET("/users/:tag", e.FindUserByTag)
+		api.POST("/users/photo", e.NewProfilePhoto)
+		api.POST("/join-room", e.JoinRoom)
+		api.POST("/leave-room", e.LeaveRoom)
+		api.POST("/next-room", e.NextRoom)
+		api.GET("/rooms/:id/user", e.GetRoomUser)
+		api.POST("/chats", e.PostChat)
+		api.GET("/user-chats/:query", e.GetUserChats)
+		api.GET("/chats/:id", e.GetOneChat)
+		api.PUT("/messages/:id", e.EditMessage)
+		api.DELETE("/messages/:id", e.DeleteMessage)
+	}
+	ws := router.Group("/ws")
+	{
+		
+	}
 	return router
 }
