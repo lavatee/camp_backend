@@ -12,6 +12,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	campbackend "github.com/lavatee/camp_backend"
 	"github.com/lavatee/camp_backend/internal/endpoint"
 	"github.com/lavatee/camp_backend/internal/repository"
 	"github.com/lavatee/camp_backend/internal/service"
@@ -67,7 +68,7 @@ func main() {
 	}
 	services := service.NewService(repo, s3, viper.GetString("s3.bucket"))
 	endp := endpoint.NewEndpoint(services)
-	server := &backend.Server{}
+	server := &campbackend.Server{}
 	go func() {
 		if err := server.Run(viper.GetString("port"), endp.InitRoutes()); err != nil {
 			logrus.Fatalf("error running http server: %s", err.Error())

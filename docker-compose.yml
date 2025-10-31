@@ -1,0 +1,34 @@
+version: '3.8'
+networks:
+  bratgram:
+services:
+  postgres:
+    restart: always
+    image: postgres:latest
+    volumes:
+      - ./.database/postgres/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: lavate
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - 5432:5432
+    networks:
+      - bratgram
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 7s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+  backend:
+    build: ./
+    command: ./main
+    ports:
+      - 8000:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+    networks:
+      - bratgram
