@@ -1,18 +1,19 @@
 package endpoint
 
 import (
-	"github.com/gin-gonic/gin"
-	"http"
 	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 	"github.com/lavatee/camp_backend/internal/model"
 )
 
 type SignUpInput struct {
-	Email string `json:"email"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
-	Name string `json:"name"`
-	Tag string `json:"tag"`
-	About string `json:"about"`
+	Name     string `json:"name"`
+	Tag      string `json:"tag"`
+	About    string `json:"about"`
 }
 
 func (e *Endpoint) SignUp(c *gin.Context) {
@@ -22,11 +23,11 @@ func (e *Endpoint) SignUp(c *gin.Context) {
 		return
 	}
 	user := model.User{
-		Email: input.Email,
+		Email:        input.Email,
 		PasswordHash: input.Password,
-		Name: input.Name,
-		Tag: input.Tag,
-		About: input.About,
+		Name:         input.Name,
+		Tag:          input.Tag,
+		About:        input.About,
 	}
 	id, err := e.services.Users.SignUp(user)
 	if err != nil {
@@ -39,7 +40,7 @@ func (e *Endpoint) SignUp(c *gin.Context) {
 }
 
 type SignInInput struct {
-	Email string `json:"email"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
@@ -55,14 +56,14 @@ func (e *Endpoint) SignIn(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"access_token": accessToken,
+		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 	})
 }
 
 func (e *Endpoint) CheckTagUnique(c *gin.Context) {
 	tag := c.Param("tag")
-	if !tag {
+	if tag == "" {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("tag is empty")})
 		return
 	}
@@ -70,4 +71,22 @@ func (e *Endpoint) CheckTagUnique(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"is_unique": isUnique,
 	})
+}
+
+type RefreshInput struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+func (e *Endpoint) Refresh(c *gin.Context) {
+	var input RefreshInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	accessToken, refreshToken, err := e.services.Users.Refresh(input.RefreshToken)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, map[string]interface{}{"access_token": accessToken, "refresh_token": refreshToken})
 }

@@ -1,35 +1,39 @@
 package endpoint
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lavatee/camp_backend/internal/model"
 )
 
-func (e *Endpoint) JoinRoom(c *gin.Context) {
-	userId, err := e.GetUserId(c)
+func (e *Endpoint) GetOneUser(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	room, err := e.services.Rooms.JoinRoom(userId)
+	user, err := e.services.Users.GetOneUser(id)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"room": room,
+		"user": user,
 	})
 }
 
-type LeaveRoomInput struct {
-	RoomId int `json:"room_id"`
+type EditUserDataInput struct {
+	Name  string `json:"name"`
+	Tag   string `json:"tag"`
+	About string `json:"about"`
 }
 
-func (e *Endpoint) LeaveRoom(c *gin.Context) {
-	var input LeaveRoomInput
-	if err := c.BindJSON(&input); err != nil {
+func (e *Endpoint) EditUserData(c *gin.Context) {
+	var input EditUserDataInput
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -38,8 +42,13 @@ func (e *Endpoint) LeaveRoom(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	delete(rooms[input.RoomId].clients, userId)
-	if err := e.services.Rooms.LeaveRoom(userId, input.RoomId); err != nil {
+	newUserInfo := model.User{
+		Name:  input.Name,
+		Tag:   input.Tag,
+		About: input.About,
+		Id:    userId,
+	}
+	if err := e.services.Users.EditUserInfo(newUserInfo); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -48,45 +57,40 @@ func (e *Endpoint) LeaveRoom(c *gin.Context) {
 	})
 }
 
-func (e *Endpoint) NextRoom(c *gin.Context) {
-	var input LeaveRoomInput
-	if err := c.BindJSON(&input); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func (e *Endpoint) FindUserByTag(c *gin.Context) {
+	tag := c.Param("tag")
+	if tag == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("tag is empty")})
 		return
 	}
-	userId, err := e.GetUserId(c)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-	delete(rooms[input.RoomId].clients, userId)
-	room, err := e.services.Rooms.NextRoom(userId, input.RoomId)
+	user, err := e.services.Users.FindUserByTag(tag)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"room": room,
+		"user": user,
 	})
 }
 
-func (e *Endpoint) GetRoomUser(c *gin.Context) {
-	roomId, err := strconv.Atoi(c.Param("id"))
+func (e *Endpoint) NewProfilePhoto(c *gin.Context) {
+	file, _, err := c.Request.FormFile("file")
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	defer file.Close()
 	userId, err := e.GetUserId(c)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	roomUser, err := e.services.Rooms.GetRoomUser(userId, roomId)
+	url, err := e.services.Users.NewProfilePhoto(userId, file)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"room_user": roomUser,
+		"photo_url": url,
 	})
 }

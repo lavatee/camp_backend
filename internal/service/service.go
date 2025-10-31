@@ -3,6 +3,7 @@ package service
 import (
 	"mime/multipart"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/lavatee/camp_backend/internal/model"
 	"github.com/lavatee/camp_backend/internal/repository"
 	"github.com/minio/minio-go/v7"
@@ -16,6 +17,8 @@ type Users interface {
 	FindUserByTag(tag string) (model.User, error)
 	GetOneUser(userId int) (model.User, error)
 	NewProfilePhoto(userId int, file multipart.File) (string, error)
+	ParseToken(token string) (jwt.MapClaims, error)
+	Refresh(refreshToken string) (string, string, error)
 }
 
 type Chats interface {

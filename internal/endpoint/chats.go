@@ -1,35 +1,69 @@
 package endpoint
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (e *Endpoint) JoinRoom(c *gin.Context) {
+func (e *Endpoint) GetUserChats(c *gin.Context) {
+	query := c.Param("query")
 	userId, err := e.GetUserId(c)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	room, err := e.services.Rooms.JoinRoom(userId)
+	chats, err := e.services.Chats.GetUserChats(userId, query)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"room": room,
+		"chats": chats,
 	})
 }
 
-type LeaveRoomInput struct {
-	RoomId int `json:"room_id"`
+func (e *Endpoint) GetOneChat(c *gin.Context) {
+	chatId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	timeZone := c.Param("tz")
+	if timeZone == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("time zone is empty")})
+		return
+	}
+	userId, err := e.GetUserId(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	chat, isTreeLegit, err := e.services.Chats.GetOneChat(userId, chatId, timeZone)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"chat":          chat,
+		"is_tree_legit": isTreeLegit,
+	})
 }
 
-func (e *Endpoint) LeaveRoom(c *gin.Context) {
-	var input LeaveRoomInput
+type EditMessageInput struct {
+	NewText string `json:"text"`
+}
+
+func (e *Endpoint) EditMessage(c *gin.Context) {
+	var input EditMessageInput
 	if err := c.BindJSON(&input); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	messageId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -38,8 +72,7 @@ func (e *Endpoint) LeaveRoom(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	delete(rooms[input.RoomId].clients, userId)
-	if err := e.services.Rooms.LeaveRoom(userId, input.RoomId); err != nil {
+	if err := e.services.Chats.EditMessage(messageId, userId, input.NewText); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -48,30 +81,8 @@ func (e *Endpoint) LeaveRoom(c *gin.Context) {
 	})
 }
 
-func (e *Endpoint) NextRoom(c *gin.Context) {
-	var input LeaveRoomInput
-	if err := c.BindJSON(&input); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	userId, err := e.GetUserId(c)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-	delete(rooms[input.RoomId].clients, userId)
-	room, err := e.services.Rooms.NextRoom(userId, input.RoomId)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"room": room,
-	})
-}
-
-func (e *Endpoint) GetRoomUser(c *gin.Context) {
-	roomId, err := strconv.Atoi(c.Param("id"))
+func (e *Endpoint) DeleteMessage(c *gin.Context) {
+	messageId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -81,12 +92,11 @@ func (e *Endpoint) GetRoomUser(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	roomUser, err := e.services.Rooms.GetRoomUser(userId, roomId)
-	if err != nil {
+	if err := e.services.Chats.DeleteMessage(messageId, userId); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"room_user": roomUser,
+		"status": "ok",
 	})
 }

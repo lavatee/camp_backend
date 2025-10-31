@@ -1,2 +1,13 @@
 port: "8000"
-
+db:
+  host: "postgres"
+  port: "5432"
+  user: "postgres"
+  password: "lavate"
+  dbname: "postgres"
+  sslmode: "disable"
+s3:
+  url: "s3.ru-7.storage.selcloud.ru"
+  accessKey: "a9d4c14243cf47fc92907f0c4389c3e4"
+  secretKey: "028a1bec80364670b3920c5cc094243d"
+  bucket: "dress-code-public"
