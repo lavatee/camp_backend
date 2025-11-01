@@ -58,10 +58,11 @@ func (s *UsersService) NewToken(claims jwt.Claims) (string, error) {
 }
 
 func (s *UsersService) SignIn(email string, password string) (string, string, error) {
-	userId, err := s.repo.Users.SignIn(email, s.hashPassword(password))
+	user, err := s.repo.Users.SignIn(email, s.hashPassword(password))
 	if err != nil {
 		return "", "", err
 	}
+	userId = user.Id
 	accessClaims := jwt.MapClaims{
 		"exp": time.Now().Add(accessTTL).Unix(),
 		"id":  userId,
