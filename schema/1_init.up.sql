@@ -43,7 +43,6 @@ CREATE TABLE users_in_room (
     translating BOOLEAN
 );
 
-ALTER TABLE avatars ADD FOREIGN KEY (user_id) REFERENCES users(id);
 ALTER TABLE users_in_chat ADD FOREIGN KEY (user_id) REFERENCES users(id);
 ALTER TABLE users_in_chat ADD FOREIGN KEY (chat_id) REFERENCES chats(id);
 ALTER TABLE friends ADD FOREIGN KEY (user_id) REFERENCES users(id);
