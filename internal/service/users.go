@@ -62,7 +62,7 @@ func (s *UsersService) SignIn(email string, password string) (string, string, er
 	if err != nil {
 		return "", "", err
 	}
-	userId = user.Id
+	userId := user.Id
 	accessClaims := jwt.MapClaims{
 		"exp": time.Now().Add(accessTTL).Unix(),
 		"id":  userId,
