@@ -39,7 +39,7 @@ func (e *Endpoint) InitRoutes() *gin.Engine {
 	{
 		api.GET("/users/:id", e.GetOneUser)           //получение пользователя происходит, когда пользователь нажимает на ник собеседника в чате, либо при заходе в профиль
 		api.PUT("/users/:id", e.EditUserData)         //изменение данных в профиле
-		api.GET("/users/:tag", e.FindUserByTag)       //при заходе на страницу "/@{tag}" на фронтенде происходит получение пользователя по тегу
+		api.GET("/users/tag/:tag", e.FindUserByTag)       //при заходе на страницу "/@{tag}" на фронтенде происходит получение пользователя по тегу
 		api.POST("/users/photo", e.NewProfilePhoto)   //обновление аватарки
 		api.POST("/join-room", e.JoinRoom)            //присоединение к комнате происходит при нажатия кнопки "поиск брата"
 		api.POST("/leave-room", e.LeaveRoom)          //выход из поиска брата в чаты пользователя
