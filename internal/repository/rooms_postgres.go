@@ -30,12 +30,12 @@ func (r *RoomsPostgres) JoinRoom(userId int) (model.Room, error) {
         )
         INSERT INTO %s (user_id, room_id) 
         SELECT $1, room_id 
-        FROM target_room 
+        FROM target_room
         RETURNING room_id
     `, usersInRoomTable, usersInRoomTable)
 	err := r.db.Get(&room.Id, query, userId)
 	if err == nil {
-		return r.getRoomWithUsers(room.Id)
+		return r.getRoomWithUsers(room.Id, userId)
 	}
 	return r.createNewRoom(userId)
 }
@@ -60,24 +60,26 @@ func (r *RoomsPostgres) createNewRoom(userId int) (model.Room, error) {
 	if err = tx.Commit(); err != nil {
 		return model.Room{}, err
 	}
-	return r.getRoomWithUsers(room.Id)
+	return r.getRoomWithUsers(room.Id, userId)
 }
 
-func (r *RoomsPostgres) getRoomWithUsers(roomId int) (model.Room, error) {
+func (r *RoomsPostgres) getRoomWithUsers(roomId int, currentUserId int) (model.Room, error) {
 	var room model.Room
 	query := fmt.Sprintf(`
         SELECT
             r.id,
-            u.id AS user_name,
+            u.id AS user_id,
             u.name AS user_name,
             u.photo_url AS user_photo_url
         FROM %s r
         JOIN %s ru ON r.id = ru.room_id
         JOIN %s u ON u.id = ru.user_id
-        WHERE r.id = $1
-        GROUP BY r.id
+        WHERE r.id = $1 
+        AND u.id != $2
+        LIMIT 1
     `, roomsTable, usersInRoomTable, usersTable)
-	err := r.db.Get(&room, query, roomId)
+
+	err := r.db.Get(&room, query, roomId, currentUserId)
 	return room, err
 }
 
