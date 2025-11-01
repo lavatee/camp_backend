@@ -33,7 +33,7 @@ func (r *UsersPostgres) SignIn(email string, passwordHash string) (model.User, e
 	if err := r.db.Get(&user, query, email, passwordHash); err != nil {
 		return model.User{}, err
 	}
-	return model.User{}, nil
+	return user, nil
 }
 
 func (r *UsersPostgres) EditUserInfo(user model.User) error {
