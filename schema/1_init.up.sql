@@ -45,6 +45,5 @@ CREATE TABLE users_in_room (
 
 ALTER TABLE users_in_chat ADD FOREIGN KEY (user_id) REFERENCES users(id);
 ALTER TABLE users_in_chat ADD FOREIGN KEY (chat_id) REFERENCES chats(id);
-ALTER TABLE friends ADD FOREIGN KEY (user_id) REFERENCES users(id);
 ALTER TABLE users_in_room ADD FOREIGN KEY (user_id) REFERENCES users(id);
 ALTER TABLE users_in_room ADD FOREIGN KEY (room_id) REFERENCES rooms(id);
