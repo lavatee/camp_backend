@@ -60,7 +60,7 @@ func (r *RoomsPostgres) createNewRoom(userId int) (model.Room, error) {
 	if err = tx.Commit(); err != nil {
 		return model.Room{}, err
 	}
-	return r.getRoomWithUsers(room.Id, userId)
+	return room, nil
 }
 
 func (r *RoomsPostgres) getRoomWithUsers(roomId int, currentUserId int) (model.Room, error) {
