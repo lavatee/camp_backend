@@ -10,6 +10,9 @@ import (
 
 func (e *Endpoint) GetUserChats(c *gin.Context) {
 	query := c.Param("query")
+	if query == "***none***"{
+		query = ""
+	}
 	userId, err := e.GetUserId(c)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
