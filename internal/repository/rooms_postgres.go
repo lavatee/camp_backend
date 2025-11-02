@@ -18,26 +18,31 @@ func NewRoomsPostgres(db *sqlx.DB) *RoomsPostgres {
 }
 
 func (r *RoomsPostgres) JoinRoom(userId int) (model.Room, error) {
-	var room model.Room
-	query := fmt.Sprintf(`
-        WITH target_room AS (
-            SELECT room_id 
-            FROM %s 
-            GROUP BY room_id 
-            HAVING COUNT(*) = 1 
-            LIMIT 1
-            FOR UPDATE SKIP LOCKED
-        )
-        INSERT INTO %s (user_id, room_id) 
-        SELECT $1, room_id 
-        FROM target_room
-        RETURNING room_id
-    `, usersInRoomTable, usersInRoomTable)
-	err := r.db.Get(&room.Id, query, userId)
-	if err == nil {
-		return r.getRoomWithUsers(room.Id, userId)
-	}
-	return r.createNewRoom(userId)
+    var targetRoomId int
+    findQuery := fmt.Sprintf(`
+        SELECT room_id 
+        FROM %s 
+        GROUP BY room_id 
+        HAVING COUNT(*) = 1 
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED
+    `, usersInRoomTable)
+    err := r.db.Get(&targetRoomId, findQuery)
+    if err == nil {
+        insertQuery := fmt.Sprintf(`
+            INSERT INTO %s (user_id, room_id) 
+            VALUES ($1, $2)
+            RETURNING room_id
+        `, usersInRoomTable)
+        
+        err = r.db.Get(&targetRoomId, insertQuery, userId, targetRoomId)
+        if err != nil {
+            return model.Room{}, err
+        }
+        
+        return r.getRoomWithUsers(targetRoomId, userId)
+    }
+    return r.createNewRoom(userId)
 }
 
 func (r *RoomsPostgres) createNewRoom(userId int) (model.Room, error) {
