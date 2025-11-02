@@ -121,7 +121,7 @@ func (r *RoomsPostgres) LeaveRoom(userId int, roomId int) error {
 
 func (r *RoomsPostgres) GetRoomUser(userId int, roomId int) (model.Room, error) {
 	var roomUser model.Room
-	query := fmt.Sprintf("SELECT ru.translating, u.language, u.name AS user_name, u.id AS user_id, r.id, u.photo_url AS user_photo_url FROM %s r JOIN %s ru ON r.id = ru.room_id JOIN %s u ON u.id = ru.user_id WHERE r.id = $1 AND u.id != $2", roomsTable, usersInRoomTable, usersTable)
+	query := fmt.Sprintf("SELECT u.name AS user_name, u.id AS user_id, r.id, u.photo_url AS user_photo_url FROM %s r JOIN %s ru ON r.id = ru.room_id JOIN %s u ON u.id = ru.user_id WHERE r.id = $1 AND u.id != $2", roomsTable, usersInRoomTable, usersTable)
 	if err := r.db.Get(&roomUser, query, roomId, userId); err != nil {
 		return model.Room{}, err
 	}
