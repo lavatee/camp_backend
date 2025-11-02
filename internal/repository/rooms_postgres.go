@@ -18,8 +18,14 @@ func NewRoomsPostgres(db *sqlx.DB) *RoomsPostgres {
 }
 
 func (r *RoomsPostgres) JoinRoom(userId int) (model.Room, error) {
-    var targetRoomId int
-    findQuery := fmt.Sprintf(`
+    tx, err := r.db.Beginx()
+    if err != nil {
+        return model.Room{}, err
+    }
+    defer tx.Rollback()
+
+    var roomId int
+    query := fmt.Sprintf(`
         SELECT room_id 
         FROM %s 
         GROUP BY room_id 
@@ -27,22 +33,39 @@ func (r *RoomsPostgres) JoinRoom(userId int) (model.Room, error) {
         LIMIT 1
         FOR UPDATE SKIP LOCKED
     `, usersInRoomTable)
-    err := r.db.Get(&targetRoomId, findQuery)
+    
+    err = tx.Get(&roomId, query)
     if err == nil {
         insertQuery := fmt.Sprintf(`
             INSERT INTO %s (user_id, room_id) 
             VALUES ($1, $2)
-            RETURNING room_id
         `, usersInRoomTable)
         
-        err = r.db.Get(&targetRoomId, insertQuery, userId, targetRoomId)
+        _, err = tx.Exec(insertQuery, userId, roomId)
+        if err != nil {
+            return model.Room{}, err
+        }
+    } else if err == sql.ErrNoRows {
+        query = fmt.Sprintf("INSERT INTO %s DEFAULT VALUES RETURNING id", roomsTable)
+        err = tx.Get(&roomId, query)
         if err != nil {
             return model.Room{}, err
         }
         
-        return r.getRoomWithUsers(targetRoomId, userId)
+        insertQuery := fmt.Sprintf("INSERT INTO %s (user_id, room_id) VALUES ($1, $2)", usersInRoomTable)
+        _, err = tx.Exec(insertQuery, userId, roomId)
+        if err != nil {
+            return model.Room{}, err
+        }
+    } else {
+        return model.Room{}, err
     }
-    return r.createNewRoom(userId)
+    
+    if err = tx.Commit(); err != nil {
+        return model.Room{}, err
+    }
+    
+    return r.getRoomWithUsers(roomId, userId)
 }
 
 func (r *RoomsPostgres) createNewRoom(userId int) (model.Room, error) {
