@@ -107,7 +107,10 @@ func (r *RoomsPostgres) getRoomWithUsers(roomId int, currentUserId int) (model.R
     `, roomsTable, usersInRoomTable, usersTable)
 
 	err := r.db.Get(&room, query, roomId, currentUserId)
-	return room, err
+	if err != nil {
+		return model.Room{Id: roomId}, nil
+	}
+	return room, nil
 }
 
 func (r *RoomsPostgres) LeaveRoom(userId int, roomId int) error {
