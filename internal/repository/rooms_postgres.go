@@ -2,7 +2,7 @@ package repository
 
 import (
 	"fmt"
-
+	"database/sql"
 	"github.com/jmoiron/sqlx"
 	"github.com/lavatee/camp_backend/internal/model"
 )
