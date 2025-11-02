@@ -31,7 +31,6 @@ func (r *RoomsPostgres) JoinRoom(userId int) (model.Room, error) {
         GROUP BY room_id 
         HAVING COUNT(*) = 1 
         LIMIT 1
-        FOR UPDATE SKIP LOCKED
     `, usersInRoomTable)
     
     err = tx.Get(&roomId, query)
